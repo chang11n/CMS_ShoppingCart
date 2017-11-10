@@ -171,5 +171,113 @@ namespace CmsShoppingCart.Areas.Admin.Controllers
             // redirect
             return RedirectToAction("EditPage");
         }
+
+        // GET: Admin/Pages/PageDetails/id
+        public ActionResult PageDetails(int id)
+        {
+            // Declare PageVM
+            PageVM model;
+
+            using (Db db = new Db())
+            {
+                //Get the page
+                PageDTO dto = db.Pages.Find(id);
+
+                //Confirm page exists
+                if (dto == null)
+                {
+                    return Content("The page does not exist.");
+                }
+                //Init PageVM
+                model = new PageVM(dto);
+
+                return View(model);
+            }
+        }
+
+        // GET: Admin/Pages/DeltetPage/id
+        public ActionResult DeletePage(int id)
+        {
+            using (Db db = new Db())
+            {
+                // Get the page
+                PageDTO dto = db.Pages.Find(id);
+
+                //Remove the page
+                db.Pages.Remove(dto);
+
+                //Save
+                db.SaveChanges();
+
+                //Redirect
+                return RedirectToAction("Index");
+            }
+        }
+
+        // POST: Admin/Pages/ReorderPages
+        [HttpPost]
+        public void ReorderPages(int[] id)
+        {
+            using (Db db = new Db())
+            {
+                // Set initial count
+                int count = 1;
+
+                // Declare PageDTO
+                PageDTO dto;
+
+                // Set sorting for each page
+                foreach (var pageId in id)
+                {
+                    dto = db.Pages.Find(pageId);
+                    dto.Sorting = count;
+                    db.SaveChanges();
+                    count++;
+                }
+            }
+        }
+
+        // GET: Admin/Pages/EditSidebar
+        [HttpGet]
+        public ActionResult EditSidebar()
+        {
+            // Declare model
+            SidebarVM model;
+
+            using (Db db = new Db())
+            {
+                // Get the DTO
+                SidebarDTO dto = db.Sidebar.Find(1);
+
+                // Init model
+                model = new SidebarVM(dto);
+            }
+
+            //Return view with model
+                return View(model);    
+        }
+
+        // POST: Admin/Pages/EditSidebar
+        [HttpPost]
+        public ActionResult EditSidebar(SidebarVM model)
+        {
+            using (Db db = new Db())
+            {
+                // Get the DTO
+                SidebarDTO dto = db.Sidebar.Find(1);
+
+                // DTO The body
+                dto.Body = model.Body;
+
+                // Save
+                db.SaveChanges();
+            }
+
+            // Set TempData message
+            TempData["SM"] = "You have edited the sidebar!";
+
+            // Redirect 
+            return RedirectToAction("EditSidebar");
+        }
     }
 }
