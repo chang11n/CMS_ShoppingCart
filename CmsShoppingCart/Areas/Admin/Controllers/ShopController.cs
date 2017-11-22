@@ -2,8 +2,10 @@
 using CmsShoppingCart.Models.ViewModels.Shop;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web;
+using System.Web.Helpers;
 using System.Web.Mvc;
 
 namespace CmsShoppingCart.Areas.Admin.Controllers
@@ -200,14 +202,78 @@ namespace CmsShoppingCart.Areas.Admin.Controllers
 
             #region Upload Image
             // Create necessary directories
+            var originalDirectory = new DirectoryInfo(string.Format("{0}image\\Uploads", Server.MapPath(@"\")));
+
+            var pathString1 = Path.Combine(originalDirectory.ToString(), "Products");
+            var pathString2 = Path.Combine(originalDirectory.ToString(), "Products\\" + id.ToString());
+            var pathString3 = Path.Combine(originalDirectory.ToString(), "Products\\" + id.ToString() + "\\Thumbs" );
+            var pathString4 = Path.Combine(originalDirectory.ToString(), "Products\\" + id.ToString() + "\\Gallery");
+            var pathString5 = Path.Combine(originalDirectory.ToString(), "Products\\" + id.ToString() + "\\Gallery\\Thumbs");
+
+            if (!Directory.Exists(pathString1))
+                Directory.CreateDirectory(pathString1);
+
+            if (!Directory.Exists(pathString2))
+                Directory.CreateDirectory(pathString2);
+
+            if (!Directory.Exists(pathString3))
+                Directory.CreateDirectory(pathString3);
+
+            if (!Directory.Exists(pathString4))
+                Directory.CreateDirectory(pathString4);
+
+            if (!Directory.Exists(pathString5))
+                Directory.CreateDirectory(pathString5);
+
             // Check if a file was uploaded
-            // Get file extensionSet original nad thumb image paths
-            // Save original 
-            // Create and save thumb
+            if (file != null && file.ContentLength > 0)
+            {
+                // Get file extension
+                string ext = file.ContentType.ToLower();
+
+                // Save original 
+                if (ext != "image/jpg" &&
+                    ext != "image/jpeg" &&
+                    ext != "image/pjpeg" &&
+                    ext != "image/gif" &&
+                    ext != "image/x-png" &&
+                    ext != "image/png")
+                {
+                    using (Db db = new Db())
+                    {
+                        model.Categories = new SelectList(db.Categories.ToList(), "Id", "Name");
+                        ModelState.AddModelError("", "The image was not uploaded - wrong image extension");
+                        return View(model);
+                    }
+                }
+                // Init image name
+                string imageName = file.FileName;
+
+                // Save image name to DTO
+                using (Db db = new Db()) {
+                    ProductDTO dto = db.Products.Find(id);
+                    dto.ImageName = imageName;
+
+                    db.SaveChanges();
+                }
+
+                // Set original and thumb image path
+                var path = string.Format("{0}\\{1}", pathString2, imageName);
+                var path2 = string.Format("{0}\\{1}", pathString3, imageName);
+
+                // Save original
+                file.SaveAs(path);
+
+                // Crate and save thumb
+                WebImage img = new WebImage(file.InputStream);
+                img.Resize(200, 200);
+                img.Save(path2);
+            }
+
             #endregion
 
             // Redirect
-            return View(model);
+            return RedirectToAction("AddProduct");
         }
 
 
